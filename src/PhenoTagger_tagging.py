@@ -80,41 +80,59 @@ def BioC_Converter(infile,outfile,biotag_dic,nn_model,para_set):
                         passage.annotations.append(bioc_note)
             bioc.dump(collection, fout, pretty_print=True)
 
-def phenotagger_tag(infolder,para_set,outfolder):
-    
-    ontfiles={'dic_file':'../dict/noabb_lemma.dic',
-              'word_hpo_file':'../dict/word_id_map.json',
-              'hpo_word_file':'../dict/id_word_map.json'}
-    
-    if para_set['model_type']=='cnn':
-        vocabfiles={'w2vfile':'../models_v1.1/bio_embedding_intrinsic.d200',   
-                    'charfile':'../dict/char.vocab',
-                    'labelfile':'../dict/lable.vocab',
-                    'posfile':'../dict/pos.vocab'}
+
+def get_ont_files():
+    return {
+        'dic_file':'../dict/noabb_lemma.dic',
+        'word_hpo_file':'../dict/word_id_map.json',
+        'hpo_word_file':'../dict/id_word_map.json'
+    }
+
+def get_vocab_and_model_files(model_type):
+    if model_type == 'cnn':
+        vocabfiles = {
+            'w2vfile':'../models_v1.1/bio_embedding_intrinsic.d200',
+            'charfile':'../dict/char.vocab',
+            'labelfile':'../dict/lable.vocab',
+            'posfile':'../dict/pos.vocab'
+        }
         modelfile='../models_v1.1/cnn_hpo_v1.1.h5'
-    elif para_set['model_type']=='bioformer':
-        vocabfiles={'labelfile':'../dict/lable.vocab',
-                    'config_path':'../models_v1.1/bioformer-cased-v1.0/bert_config.json',
-                    'checkpoint_path':'../models_v1.1/bioformer-cased-v1.0/bioformer-cased-v1.0-model.ckpt-2000000',
-                    'vocab_path':'../models_v1.1/bioformer-cased-v1.0/vocab.txt'}
+    elif model_type == 'bioformer':
+        vocabfiles={
+            'labelfile':'../dict/lable.vocab',
+            'config_path':'../models_v1.1/bioformer-cased-v1.0/bert_config.json',
+            'checkpoint_path':'../models_v1.1/bioformer-cased-v1.0/bioformer-cased-v1.0-model.ckpt-2000000',
+            'vocab_path':'../models_v1.1/bioformer-cased-v1.0/vocab.txt'
+        }
         modelfile='../models_v1.1/bioformer_hpo_v1.1.h5'
     else:
-        vocabfiles={'labelfile':'../dict/lable.vocab',
-                    'config_path':'../models_v1.1/biobert_v11_pubmed/bert_config.json',
-                    'checkpoint_path':'../models_v1.1/biobert_v11_pubmed/model.ckpt-1000000',
-                    'vocab_path':'../models_v1.1/biobert_v11_pubmed/vocab.txt'}
+        vocabfiles={
+            'labelfile':'../dict/lable.vocab',
+            'config_path':'../models_v1.1/biobert_v11_pubmed/bert_config.json',
+            'checkpoint_path':'../models_v1.1/biobert_v11_pubmed/model.ckpt-1000000',
+            'vocab_path':'../models_v1.1/biobert_v11_pubmed/vocab.txt'
+        }
         modelfile='../models_v1.1/biobert_hpo_v1.1.h5'
-    
-    # loading dict and model
-        
-    biotag_dic=dic_ont(ontfiles)    
+    return vocabfiles, modelfile
 
-    if para_set['model_type']=='cnn':
+
+def get_nn_model(model_type, vocabfiles, modelfile):
+    if model_type == 'cnn':
         nn_model=bioTag_CNN(vocabfiles)
         nn_model.load_model(modelfile)
     else:
         nn_model=bioTag_BERT(vocabfiles)
         nn_model.load_model(modelfile)
+    return nn_model
+
+def phenotagger_tag(infolder,para_set,outfolder):
+    
+    ontfiles = get_ont_files()
+    vocabfiles, modelfile = get_vocab_and_model_files(para_set['model_type'])
+    
+    # loading dict and model
+    biotag_dic=dic_ont(ontfiles)    
+    nn_model = get_nn_model(para_set['model_type'], vocabfiles, modelfile)
 
     #tagging text
     print("begin tagging........")
