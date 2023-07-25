@@ -1,4 +1,4 @@
-# run phenobert locally
+# run phenotagger locally
 ```shell
 cd PhenoTagger
 export PYTHONPATH=`pwd`/src:$PYTHONPATH
